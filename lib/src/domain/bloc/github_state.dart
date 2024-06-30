@@ -1,37 +1,42 @@
+import 'package:equatable/equatable.dart';
 import 'package:tark_test_task/src/domain/model/github_profile.dart';
 
-sealed class GithubUserState {}
+abstract class GithubUserState extends Equatable {
+  const GithubUserState();
+
+  @override
+  List<Object> get props => [];
+}
 
 class GithubUserInitial extends GithubUserState {}
 
 class GithubUserLoading extends GithubUserState {}
 
 class GithubUserLoaded extends GithubUserState {
-  final Map<String, GithubProfile> users;
-  final Map<String, GithubProfile> filteredUsers;
-  final bool isLoadingMore;
+  final List<GithubProfile> users;
 
-  GithubUserLoaded({
+  const GithubUserLoaded({
     required this.users,
-    required this.filteredUsers,
-    this.isLoadingMore = false,
   });
 
   GithubUserLoaded copyWith({
-    Map<String, GithubProfile>? users,
-    Map<String, GithubProfile>? filteredUsers,
-    bool? isLoadingMore,
+    List<GithubProfile>? users,
+    List<GithubProfile>? filteredUsers,
   }) {
     return GithubUserLoaded(
       users: users ?? this.users,
-      filteredUsers: filteredUsers ?? this.filteredUsers,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
+
+  @override
+  List<Object> get props => [users];
 }
 
 class GithubUserError extends GithubUserState {
   final String message;
 
-  GithubUserError({required this.message});
+  const GithubUserError({required this.message});
+
+  @override
+  List<Object> get props => [message];
 }

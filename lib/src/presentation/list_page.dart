@@ -9,7 +9,8 @@ import 'package:tark_test_task/src/domain/model/github_profile.dart';
 
 class ListPage extends StatefulWidget {
   final ListPattern pattern;
-  const ListPage({super.key, required this.pattern});
+  final List<GithubProfile> allUsers;
+  const ListPage({super.key, required this.pattern, required this.allUsers});
 
   @override
   State<ListPage> createState() => _ListPageState();
@@ -48,52 +49,55 @@ class _ListPageState extends State<ListPage>
 
   @override
   Widget build(BuildContext context) {
+    late RegExp regex;
+    switch (widget.pattern) {
+      case ListPattern.ah:
+        regex = RegExp(r'^[A-H]', caseSensitive: false);
+        break;
+      case ListPattern.ip:
+        regex = RegExp(r'^[I-P]', caseSensitive: false);
+        break;
+      case ListPattern.qz:
+        regex = RegExp(r'^[Q-Z]', caseSensitive: false);
+        break;
+    }
+    final filteredUsers =
+        widget.allUsers.where((user) => regex.hasMatch(user.login[0])).toList();
     super.build(context);
-    return BlocBuilder<GithubUserBloc, GithubUserState>(
-      builder: (context, state) {
-        if (state is GithubUserLoading) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (state is GithubUserLoaded) {
-          late RegExp regex;
-          switch (widget.pattern) {
-            case ListPattern.ah:
-              regex = RegExp(r'^[A-H]', caseSensitive: false);
-              break;
-            case ListPattern.ip:
-              regex = RegExp(r'^[I-P]', caseSensitive: false);
-              break;
-            case ListPattern.qz:
-              regex = RegExp(r'^[Q-Z]', caseSensitive: false);
-              break;
-          }
-          final sortedUsers = state.filteredUsers.values
-              .where((user) => regex.hasMatch(user.login[0]))
-              .toList();
-
-          _isLoadingMore = state.isLoadingMore;
-
-          return Scrollbar(
-            controller: _scrollController,
-            child: ListView.builder(
-              controller: _scrollController,
-              itemCount: sortedUsers.length + (state.isLoadingMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index >= sortedUsers.length) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: CircularProgressIndicator(),
-                    ),
+    return Scrollbar(
+      controller: _scrollController,
+      child: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index >= filteredUsers.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator()),
                   );
                 }
-                final user = sortedUsers[index];
+                final user = filteredUsers[index];
                 return ListTile(
+                  key: ValueKey<String>(user.login),
                   leading: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
-                      imageUrl: sortedUsers[index].avatarUrl,
+                      imageUrl: user.avatarUrl,
                       width: 50,
                       height: 50,
+                      placeholder: (context, url) => Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                     ),
                   ),
                   title: Text(user.login),
@@ -107,17 +111,15 @@ class _ListPageState extends State<ListPage>
                             color: Colors.grey[300],
                           ),
                         )
-                      : Text('${user.followers}/${user.following}'),
+                      : Text(
+                          '${user.followers} followers / ${user.following} following'),
                 );
               },
+              childCount: filteredUsers.length + 1,
             ),
-          );
-        } else if (state is GithubUserError) {
-          return Center(child: Text('Error: ${state.message}'));
-        } else {
-          return const Center(child: Text('Select a range to fetch users'));
-        }
-      },
+          ),
+        ],
+      ),
     );
   }
 

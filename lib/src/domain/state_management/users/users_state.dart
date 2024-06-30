@@ -1,11 +1,7 @@
-import 'package:equatable/equatable.dart';
 import 'package:tark_test_task/src/domain/model/profile.dart';
 
-abstract class UsersState extends Equatable {
+sealed class UsersState {
   const UsersState();
-
-  @override
-  List<Object> get props => [];
 }
 
 class UsersInitial extends UsersState {}
@@ -27,16 +23,10 @@ class UsersLoaded extends UsersState {
       users: users ?? this.users,
     );
   }
-
-  @override
-  List<Object> get props => [users];
 }
 
 class UsersError extends UsersState {
   final String message;
 
   const UsersError({required this.message});
-
-  @override
-  List<Object> get props => [message];
 }

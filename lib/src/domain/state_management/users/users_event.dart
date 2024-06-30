@@ -1,25 +1,21 @@
 import 'package:tark_test_task/src/domain/model/profile.dart';
-import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
-import 'package:tark_test_task/src/presentation/list_pattern.dart';
 
 sealed class UsersEvent {}
 
 class FetchUsers extends UsersEvent {
-  final ListPattern pattern;
   final int since;
   final int perPage;
 
   FetchUsers({
-    required this.pattern,
-    this.since = 0,
-    this.perPage = 100,
+    required this.since,
+    required this.perPage,
   });
 }
 
 class LoadMoreUsers extends UsersEvent {
-  final ListPattern pattern;
+  final int perPage;
 
-  LoadMoreUsers({required this.pattern});
+  LoadMoreUsers({required this.perPage});
 }
 
 class UpdateUserDetails extends UsersEvent {

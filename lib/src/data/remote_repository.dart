@@ -1,19 +1,24 @@
 import 'package:dio/dio.dart';
+import 'package:tark_test_task/src/data/remote_interceptor.dart';
 import 'package:tark_test_task/src/data/repository.dart';
-import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
 import 'package:tark_test_task/src/domain/model/profile.dart';
-import 'package:tark_test_task/src/presentation/list_pattern.dart';
 
-class RepositoryImpl implements Repository {
+class RemoteRepository implements Repository {
   final Dio _dio;
-  final String _authToken;
+  final String? _authToken;
   final String _baseUrl = 'https://api.github.com/users';
 
-  RepositoryImpl({Dio? dio, required String authToken})
+  RemoteRepository({Dio? dio, required String? authToken})
       : _dio = dio ?? Dio(),
-        _authToken = authToken;
+        _authToken = authToken {
+    _dio.interceptors.add(RemoteInterceptor(authToken: _authToken));
+  }
 
-  Future<List<Profile>> _getUsers({int since = 0, int perPage = 100}) async {
+  @override
+  Future<List<Profile>> getUsers({
+    required int since,
+    required int perPage,
+  }) async {
     try {
       final response = await _dio.get(
         _baseUrl,
@@ -21,11 +26,6 @@ class RepositoryImpl implements Repository {
           'since': since,
           'per_page': perPage,
         },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $_authToken',
-          },
-        ),
       );
 
       if (response.statusCode == 200) {
@@ -39,23 +39,10 @@ class RepositoryImpl implements Repository {
     }
   }
 
-  @override
-  Future<List<Profile>> getUsersInRange(
-      {int since = 0, int perPage = 100, required ListPattern pattern}) async {
-    final List<Profile> users = await _getUsers(since: since, perPage: perPage);
-    return users;
-  }
-
-  @override
   Future<Profile> getUserDetails(String username) async {
     try {
       final response = await _dio.get(
         '$_baseUrl/$username',
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $_authToken',
-          },
-        ),
       );
 
       if (response.statusCode == 200) {

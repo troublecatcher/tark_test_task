@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:tark_test_task/src/data/repository.dart';
-import 'package:tark_test_task/src/data/repository_impl.dart';
-import 'package:tark_test_task/src/domain/state_management/user_details/user_details_bloc.dart';
+import 'package:tark_test_task/src/data/remote_repository.dart';
+import 'package:tark_test_task/src/domain/state_management/user_details/user_details_cubit.dart';
 import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
 import 'package:tark_test_task/src/domain/state_management/users/users_event.dart';
-import 'package:tark_test_task/src/presentation/home_screen.dart';
-import 'package:tark_test_task/src/presentation/list_pattern.dart';
+import 'package:tark_test_task/src/presentation/view/screen/home_screen.dart';
+import 'package:tark_test_task/src/presentation/control/query_cubit.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: "assets/.env");
@@ -19,20 +18,24 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Repository repository = RepositoryImpl(authToken: dotenv.env['key']!);
+    final RemoteRepository repository =
+        RemoteRepository(authToken: dotenv.env['key']);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: MultiBlocProvider(
         providers: [
           BlocProvider(
             create: (context) => UsersBloc(repository: repository)
-              ..add(FetchUsers(pattern: ListPattern.ah)),
+              ..add(FetchUsers(since: 0, perPage: 100)),
           ),
           BlocProvider(
             create: (context) => UserDetailsCubit(
-              repository: repository,
+              remoteRepository: repository,
               usersBloc: context.read<UsersBloc>(),
             ),
+          ),
+          BlocProvider(
+            create: (context) => QueryCubit(),
           ),
         ],
         child: const HomeScreen(),

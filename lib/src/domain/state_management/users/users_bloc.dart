@@ -18,8 +18,7 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
   Future<void> _onFetchUsers(FetchUsers event, Emitter<UsersState> emit) async {
     emit(UsersLoading());
     try {
-      List<Profile> usersList = await _githubRepository.getUsersInRange(
-        pattern: event.pattern,
+      List<Profile> usersList = await _githubRepository.getUsers(
         since: event.since,
         perPage: event.perPage,
       );
@@ -37,10 +36,9 @@ class UsersBloc extends Bloc<UsersEvent, UsersState> {
       final loadedState = state as UsersLoaded;
       final currentUsers = loadedState.users;
       try {
-        final newUsersList = await _githubRepository.getUsersInRange(
-          pattern: event.pattern,
+        final newUsersList = await _githubRepository.getUsers(
           since: currentUsers.length,
-          perPage: 100,
+          perPage: event.perPage,
         );
         final allUsers = List<Profile>.from(currentUsers)..addAll(newUsersList);
         emit(UsersLoaded(users: allUsers));

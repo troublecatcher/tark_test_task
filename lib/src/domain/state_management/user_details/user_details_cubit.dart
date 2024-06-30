@@ -1,20 +1,21 @@
 import 'package:bloc/bloc.dart';
-import 'package:tark_test_task/src/data/repository.dart';
+import 'package:tark_test_task/src/data/remote_repository.dart';
 import 'package:tark_test_task/src/domain/state_management/user_details/user_details_state.dart';
 import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
 import 'package:tark_test_task/src/domain/state_management/users/users_event.dart';
 
 class UserDetailsCubit extends Cubit<UserDetailsState> {
-  final Repository _repository;
+  final RemoteRepository _repository;
   final UsersBloc _usersBloc;
 
   UserDetailsCubit(
-      {required Repository repository, required UsersBloc usersBloc})
-      : _repository = repository,
+      {required RemoteRepository remoteRepository,
+      required UsersBloc usersBloc})
+      : _repository = remoteRepository,
         _usersBloc = usersBloc,
         super(UserDetailsInitial());
-  Future<void> onFetchUserDetails(String username) async {
-    emit(UserDetailsLoading());
+  Future<void> fetchUserDetails(String username) async {
+    emit(UserDetailsLoading(username: username));
     try {
       final detailedUser = await _repository.getUserDetails(username);
       _usersBloc.add(UpdateUserDetails(user: detailedUser));

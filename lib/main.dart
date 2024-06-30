@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:tark_test_task/src/data/github_repository.dart';
-import 'package:tark_test_task/src/data/github_repository_impl.dart';
-import 'package:tark_test_task/src/domain/bloc/github_bloc.dart';
-import 'package:tark_test_task/src/domain/bloc/github_event.dart';
+import 'package:tark_test_task/src/data/repository.dart';
+import 'package:tark_test_task/src/data/repository_impl.dart';
+import 'package:tark_test_task/src/domain/state_management/user_details/user_details_bloc.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_event.dart';
 import 'package:tark_test_task/src/presentation/home_screen.dart';
+import 'package:tark_test_task/src/presentation/list_pattern.dart';
 
 Future<void> main() async {
-<<<<<<< Updated upstream
-  await dotenv.load(fileName: ".env");
-=======
   await dotenv.load(fileName: "assets/.env");
->>>>>>> Stashed changes
   runApp(const MainApp());
 }
 
@@ -21,15 +19,22 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final GithubRepository githubRepository =
-        GithubRepositoryImpl(authToken: dotenv.env['key']!);
+    final Repository repository = RepositoryImpl(authToken: dotenv.env['key']!);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: BlocProvider(
-        create: (context) => GithubUserBloc(githubRepository: githubRepository)
-          ..add(
-            FetchGithubUsers(pattern: ListPattern.ah),
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (context) => UsersBloc(repository: repository)
+              ..add(FetchUsers(pattern: ListPattern.ah)),
           ),
+          BlocProvider(
+            create: (context) => UserDetailsCubit(
+              repository: repository,
+              usersBloc: context.read<UsersBloc>(),
+            ),
+          ),
+        ],
         child: const HomeScreen(),
       ),
     );

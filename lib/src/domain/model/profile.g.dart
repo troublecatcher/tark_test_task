@@ -1,13 +1,12 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'github_profile.dart';
+part of 'profile.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-GithubProfile _$GithubProfileFromJson(Map<String, dynamic> json) =>
-    GithubProfile(
+Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
       login: json['login'] as String,
       avatarUrl: json['avatar_url'] as String,
     )

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:tark_test_task/src/domain/bloc/github_bloc.dart';
-import 'package:tark_test_task/src/domain/bloc/github_event.dart';
-import 'package:tark_test_task/src/domain/bloc/github_state.dart';
-import 'package:tark_test_task/src/presentation/list_page.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_event.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_state.dart';
+import 'package:tark_test_task/src/presentation/user_list.dart';
+import 'package:tark_test_task/src/presentation/list_pattern.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,9 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onScroll() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      context
-          .read<GithubUserBloc>()
-          .add(LoadMoreGithubUsers(pattern: ListPattern.ah));
+      context.read<UsersBloc>().add(LoadMoreUsers(pattern: ListPattern.ah));
     }
   }
 
@@ -43,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
       length: ListPattern.values.length,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Github Users'),
           actions: [
             IconButton(
               onPressed: () {},
@@ -54,22 +52,22 @@ class _HomeScreenState extends State<HomeScreen> {
             tabs: ListPattern.values.map((e) => Tab(text: e.pattern)).toList(),
           ),
         ),
-        body: BlocBuilder<GithubUserBloc, GithubUserState>(
+        body: BlocBuilder<UsersBloc, UsersState>(
           builder: (context, state) {
-            if (state is GithubUserLoading) {
+            if (state is UsersLoading) {
               return const Center(child: CircularProgressIndicator());
-            } else if (state is GithubUserLoaded) {
+            } else if (state is UsersLoaded) {
               return TabBarView(
                 children: List.generate(
                   ListPattern.values.length,
-                  (index) => ListPage(
+                  (index) => UserList(
                     key: ValueKey(index),
                     pattern: ListPattern.values[index],
                     allUsers: state.users,
                   ),
                 ),
               );
-            } else if (state is GithubUserError) {
+            } else if (state is UsersError) {
               return Center(child: Text('Error: ${state.message}'));
             } else {
               return const Center(child: Text('Select a range to fetch users'));
@@ -78,8 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () => context
-              .read<GithubUserBloc>()
-              .add(LoadMoreGithubUsers(pattern: ListPattern.ah)),
+              .read<UsersBloc>()
+              .add(LoadMoreUsers(pattern: ListPattern.ah)),
           child: const Icon(Icons.save_alt_sharp),
         ),
       ),

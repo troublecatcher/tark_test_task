@@ -2,21 +2,23 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:tark_test_task/src/domain/bloc/github_bloc.dart';
-import 'package:tark_test_task/src/domain/bloc/github_event.dart';
-import 'package:tark_test_task/src/domain/bloc/github_state.dart';
-import 'package:tark_test_task/src/domain/model/github_profile.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_bloc.dart';
+import 'package:tark_test_task/src/domain/state_management/users/users_event.dart';
+import 'package:tark_test_task/src/domain/state_management/user_details/user_details_bloc.dart';
+import 'package:tark_test_task/src/domain/state_management/user_details/user_details_event.dart';
+import 'package:tark_test_task/src/domain/model/profile.dart';
+import 'package:tark_test_task/src/presentation/list_pattern.dart';
 
-class ListPage extends StatefulWidget {
+class UserList extends StatefulWidget {
   final ListPattern pattern;
-  final List<GithubProfile> allUsers;
-  const ListPage({super.key, required this.pattern, required this.allUsers});
+  final List<Profile> allUsers;
+  const UserList({super.key, required this.pattern, required this.allUsers});
 
   @override
-  State<ListPage> createState() => _ListPageState();
+  State<UserList> createState() => _UserListState();
 }
 
-class _ListPageState extends State<ListPage>
+class _UserListState extends State<UserList>
     with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
   bool _isLoadingMore = false;
@@ -33,9 +35,7 @@ class _ListPageState extends State<ListPage>
         _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore) {
         _isLoadingMore = true;
-        context
-            .read<GithubUserBloc>()
-            .add(LoadMoreGithubUsers(pattern: widget.pattern));
+        context.read<UsersBloc>().add(LoadMoreUsers(pattern: widget.pattern));
       }
     }
   }
@@ -49,6 +49,8 @@ class _ListPageState extends State<ListPage>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     late RegExp regex;
     switch (widget.pattern) {
       case ListPattern.ah:
@@ -61,9 +63,10 @@ class _ListPageState extends State<ListPage>
         regex = RegExp(r'^[Q-Z]', caseSensitive: false);
         break;
     }
+
     final filteredUsers =
         widget.allUsers.where((user) => regex.hasMatch(user.login[0])).toList();
-    super.build(context);
+
     return Scrollbar(
       controller: _scrollController,
       child: CustomScrollView(
@@ -71,7 +74,7 @@ class _ListPageState extends State<ListPage>
         slivers: [
           SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) {
+              (ctx, index) {
                 if (index >= filteredUsers.length) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
@@ -79,6 +82,11 @@ class _ListPageState extends State<ListPage>
                   );
                 }
                 final user = filteredUsers[index];
+                if (user.followers == null) {
+                  context
+                      .read<UserDetailsCubit>()
+                      .add(FetchUserDetails(username: user.login));
+                }
                 return ListTile(
                   key: ValueKey<String>(user.login),
                   leading: ClipRRect(
@@ -96,13 +104,21 @@ class _ListPageState extends State<ListPage>
                           color: Colors.grey[300],
                         ),
                       ),
-                      errorWidget: (context, url, error) =>
-                          const Icon(Icons.error),
+                      errorWidget: (context, url, error) => CachedNetworkImage(
+                        imageUrl: 'https://source.unsplash.com/random/50x50',
+                        placeholder: (context, url) => Container(
+                          width: 50,
+                          height: 50,
+                          color: Colors.grey[300],
+                        ),
+                      ),
                     ),
                   ),
                   title: Text(user.login),
-                  subtitle: user.followers == null || user.following == null
-                      ? Shimmer.fromColors(
+                  subtitle: user.followers != null
+                      ? Text(
+                          '${user.followers} followers / ${user.following} following')
+                      : Shimmer.fromColors(
                           baseColor: Colors.grey[300]!,
                           highlightColor: Colors.grey[100]!,
                           child: Container(
@@ -110,9 +126,7 @@ class _ListPageState extends State<ListPage>
                             height: 16,
                             color: Colors.grey[300],
                           ),
-                        )
-                      : Text(
-                          '${user.followers} followers / ${user.following} following'),
+                        ),
                 );
               },
               childCount: filteredUsers.length + 1,
